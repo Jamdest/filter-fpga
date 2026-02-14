@@ -1,18 +1,15 @@
-############################################
-# Vivado generated files
-############################################
+############################################################
+# Vivado generated files and runtime artifacts
+############################################################
 
+# General Vivado working directories
 .vivado/
 *.cache/
 *.runs/
 *.sim/
 *.hw/
 
-*.jou
-*.log
-*.str
-*.xpr.user
-
+# Project-specific generated folders
 project.cache/
 project.hw/
 project.ip_user_files/
@@ -20,27 +17,40 @@ project.runs/
 project.sim/
 .project/
 
-############################################
-# IP cores generated output
-############################################
+# Log / session files
+*.jou
+*.log
+*.str
+*.xpr.user
 
-rtl/ip/**/.Xil/
-rtl/ip/**/synth/
-rtl/ip/**/sim/
-rtl/ip/**/impl/
 
-############################################
-# Block Design generated output
-############################################
+############################################################
+# Vivado IP cores
+# KEEP ONLY .xci
+############################################################
 
-rtl/bd/**/.Xil/
-rtl/bd/**/ip/
-rtl/bd/**/sim/
-rtl/bd/**/hw_handoff/
+# Ignore everything inside IP directory
+rtl/ip/**
 
-############################################
-# OS / editor junk
-############################################
+# But keep IP configuration files
+!rtl/ip/**/*.xci
+
+
+############################################################
+# Block Design
+# KEEP ONLY .bd
+############################################################
+
+# Ignore generated BD content
+rtl/bd/**
+
+# Keep block design source file
+!rtl/bd/**/*.bd
+
+
+############################################################
+# OS / editor noise
+############################################################
 
 .DS_Store
 Thumbs.db
