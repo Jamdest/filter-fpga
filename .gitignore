@@ -1,0 +1,50 @@
+############################################
+# Vivado generated files
+############################################
+
+.vivado/
+*.cache/
+*.runs/
+*.sim/
+*.hw/
+
+*.jou
+*.log
+*.str
+*.xpr.user
+
+project.cache/
+project.hw/
+project.ip_user_files/
+project.runs/
+project.sim/
+.project/
+
+############################################
+# IP cores generated output
+############################################
+
+rtl/ip/**/.Xil/
+rtl/ip/**/synth/
+rtl/ip/**/sim/
+rtl/ip/**/impl/
+
+############################################
+# Block Design generated output
+############################################
+
+rtl/bd/**/.Xil/
+rtl/bd/**/ip/
+rtl/bd/**/sim/
+rtl/bd/**/hw_handoff/
+
+############################################
+# OS / editor junk
+############################################
+
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.bak
+*~
