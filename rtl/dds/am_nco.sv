@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 //------------------------------------------------------------------------------
-// Module: am_envelope_nco
+// Module: am_nco
 // Purpose:
 //   - Generate an amplitude envelope for AM in Q1.15 format (0..32767)
 //   - Uses a 32-bit phase accumulator as an NCO
@@ -14,7 +14,7 @@
 // Notes:
 //   - Triangle is derived from sawtooth using MSB mirroring.
 //------------------------------------------------------------------------------
-module am_envelope_nco #(
+module am_nco #(
     parameter [31:0] AM_STEP   = 32'd85899,   // ~1 kHz at 50 MHz clock
     parameter [15:0] DEPTH_Q15 = 16'd16384    // 50% depth
 )(
