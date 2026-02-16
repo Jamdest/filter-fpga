@@ -19,7 +19,7 @@ module dds_wrapper (
     output wire [15:0] o_phase
 );
 
-    wire [31:0] cfg_tdata = {i_pinc, i_poff};
+    wire [31:0] cfg_tdata = {i_pinc, i_poff}; // 
     wire        aresetn   = ~rst;
 
     // DDS IP instance (port names must match your generated IP)
