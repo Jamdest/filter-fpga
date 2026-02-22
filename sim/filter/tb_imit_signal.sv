@@ -37,8 +37,8 @@ module tb_imit_signal;
     // Adjust parameters as you like for simulation speed/visibility.
     // DWELL_CYCLES small -> sweep changes fast in sim.
     imit_signal #(
-        .START_FREQ    (32'h0100),
-        .STOP_FREQ     (32'h2000),
+        .START_FREQ    (32'h147A),
+        .STOP_FREQ     (32'h23D7),
         .STEP          (32'h0100),
         .DWELL_CYCLES  (2000),           // 2000 cycles @50MHz = 40 us per step
         .MOD           ("linear"),

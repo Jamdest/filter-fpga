@@ -9,7 +9,7 @@
       "component_parameters": {
         "Component_Name": [ { "value": "dds_compiler_0", "resolve_type": "user", "usage": "all" } ],
         "PartsPresent": [ { "value": "Phase_Generator_and_SIN_COS_LUT", "resolve_type": "user", "usage": "all" } ],
-        "DDS_Clock_Rate": [ { "value": "50", "value_src": "user", "resolve_type": "user", "format": "float", "usage": "all" } ],
+        "DDS_Clock_Rate": [ { "value": "100", "value_src": "user", "resolve_type": "user", "format": "float", "usage": "all" } ],
         "Channels": [ { "value": "1", "resolve_type": "user", "usage": "all" } ],
         "Mode_of_Operation": [ { "value": "Standard", "resolve_type": "user", "usage": "all" } ],
         "Modulus": [ { "value": "9", "resolve_type": "user", "format": "long", "usage": "all" } ],
