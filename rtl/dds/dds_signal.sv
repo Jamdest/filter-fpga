@@ -1,99 +1,114 @@
 `timescale 1ns / 1ps
 
 //------------------------------------------------------------------------------
-module dds_signal#(
-    parameter START_FREQ    = 32'h147A_E147,
-    parameter STOP_FREQ     = 32'h3333_3333,
-    parameter STEP_FREQ     = 32'h0000_2710,
+module dds_signal #(
+    parameter int START_FREQ     = 32'h147A_E147, // Несущая / Начальная частота
+    parameter int STOP_FREQ      = 32'h3333_3333, // Конечная частота (для ЛЧМ)
+    parameter int STEP_FREQ      = 32'h0000_2710, // Шаг перестройки (для ЛЧМ)
     
-    parameter MODULATION    = "LFM",
-    
-    localparam P_NUM_STEP = (START_FREQ - STOP_FREQ)/STEP_FREQ
+    // Новые параметры для управления импульсом:
+    parameter int PULSE_DURATION = 32'd10000,     // Длительность импульса в тактах
+    parameter string MODULATION  = "LFM"          // Тип: "LFM" (ЛЧМ) или "CW" (одна частота)
 ) (
-    input  wire clk,
-    input  wire rst,
-    input  wire i_btn_start,
-    output wire [13:0] o_sine,
-    output wire [13:0] o_cosine,
-    output wire [15:0] o_phase
+    input  logic clk,
+    input  logic rst,
+    input  logic i_btn_start,
+    
+    // Выходные сигналы
+    output logic [13:0] o_sine,
+    output logic [13:0] o_cosine,
+    output logic [15:0] o_phase,
+    output logic        o_pulse_valid             // Флаг активного импульса (огибающая)
 );
 
-    //dds compiler wires
-    wire [63:0] cfg_tdata;  // pinc + poff
-    wire        aresetn;    // rst 
-    wire [15:0] pinc; 
-    wire [15:0] poff; 
-    wire [31:0] data_dds_out;    // cosine + sine output
-    
-    // FSM
-    reg [$clog2(P_NUM_STEP)-1:0]    cnt_step;
-    
-    typedef enum reg [1:0] {
-        ST_IDLE  = 2'b00,
-        ST_START = 2'b01,
-        ST_SWEEP = 2'b10,
-        ST_DONE  = 2'b11
-    } t_state;
-    
-    t_state  state;
-    
-    
-    reg [31:0] pinc_curr;
-    reg        cfg_valid;
+    // Служебные сигналы DDS
+    logic [63:0] cfg_tdata;  // Данные конфигурации
+    logic        cfg_valid;  // Валидность конфигурации
+    logic [31:0] data_dds_out; // Выход DDS (cosine + sine)
+    logic        aresetn;
 
-    assign cfg_tdata = {32'h0000, pinc_curr};
+    // FSM
+    typedef enum logic [1:0] {
+        ST_IDLE  = 2'b00,
+        ST_RUN   = 2'b01,
+        ST_DONE  = 2'b10
+    } state_t;
+    
+    state_t state;
+    
+    logic [31:0] pinc_curr;
+    logic [31:0] timer;
+
     assign aresetn = ~rst;
-    assign o_sine = data_dds_out[13:0];
-    assign o_cosine = data_dds_out[29:16];
+    
+    // Формирование конфигурации для DDS (Phase Increment)
+    assign cfg_tdata = {32'h0000_0000, pinc_curr};
+
     // Инстанс стандартного IP-ядра DDS
     dds_compiler_0 dds_0 (
-        .aclk(clk),
-        .aresetn(aresetn),
-        .s_axis_config_tdata(cfg_tdata),
-        .s_axis_config_tvalid(cfg_valid),
-        .m_axis_data_tdata(data_dds_out),
-        .m_axis_phase_tdata(o_phase)
+        .aclk                  (clk),
+        .aresetn               (aresetn),
+        .s_axis_config_tdata   (cfg_tdata),
+        .s_axis_config_tvalid  (cfg_valid),
+        .m_axis_data_tdata     (data_dds_out),
+        .m_axis_phase_tdata    (o_phase)
     );
     
+    // Логика выходных сигналов
+    // Строб: активен только когда генератор в состоянии RUN (идет импульс)
+    assign o_pulse_valid = (state == ST_RUN);
     
-    
-    
-    always @(posedge clk or posedge rst) begin
+    // Привязываем синус и косинус, обнуляя их вне импульса
+    assign o_sine   = o_pulse_valid ? data_dds_out[13:0]  : 14'd0;
+    assign o_cosine = o_pulse_valid ? data_dds_out[29:16] : 14'd0;
+
+    // Логика конечного автомата и генерации
+    always_ff @(posedge clk or posedge rst) begin
         if (rst) begin
             state     <= ST_IDLE;
             pinc_curr <= START_FREQ;
             cfg_valid <= 1'b0;
+            timer     <= '0;
         end else begin
             case (state)
-                // Ожидание команды на старт
                 ST_IDLE: begin
                     cfg_valid <= 1'b0;
+                    timer     <= '0;
+                    pinc_curr <= START_FREQ;
+                    
                     if (i_btn_start) begin
-                        state     <= ST_START;
-                        pinc_curr <= START_FREQ;
+                        state     <= ST_RUN;
+                        cfg_valid <= 1'b1; // Применяем начальную частоту
                     end
                 end
 
-                // Инициализация первой частоты
-                ST_START: begin
-                    cfg_valid <= 1'b1;
-                    state     <= ST_SWEEP;
-                end
-
-                // Процесс изменения частоты (Sweep)
-                ST_SWEEP: begin
-                    if (pinc_curr < STOP_FREQ) begin
-                        pinc_curr <= pinc_curr + STEP_FREQ;
-                        cfg_valid <= 1'b1;
+                ST_RUN: begin
+                    if (timer < PULSE_DURATION - 1) begin
+                        timer <= timer + 1'b1;
+                        
+                        // Логика модуляции частоты
+                        if (MODULATION == "LFM") begin
+                            if (pinc_curr < STOP_FREQ) begin
+                                pinc_curr <= pinc_curr + STEP_FREQ;
+                                cfg_valid <= 1'b1; // Отсылаем обновленную частоту
+                            end else begin
+                                cfg_valid <= 1'b0; // Частота достигла пика, дожидаемся конца импульса
+                            end
+                        end else if (MODULATION == "CW") begin
+                            // Для Continuous Wave частота постоянна
+                            cfg_valid <= 1'b0; 
+                        end
                     end else begin
-                        cfg_valid <= 1'b0;
                         state     <= ST_DONE;
+                        cfg_valid <= 1'b0;
                     end
                 end
 
-                // Конец пачки, возврат в IDLE
                 ST_DONE: begin
-                    state <= ST_IDLE;
+                    // Защита от перезапуска, пока кнопка старта не отжата
+                    if (!i_btn_start) begin
+                        state <= ST_IDLE;
+                    end
                 end
 
                 default: state <= ST_IDLE;
@@ -101,6 +116,4 @@ module dds_signal#(
         end
     end
         
-        
-        
- endmodule
+endmodule
